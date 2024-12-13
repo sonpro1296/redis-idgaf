@@ -50,7 +50,7 @@ func (h *HyperLogLog) correct(estimate float64) int64 {
 	if float64(estimate) <= 2.5*float64(len(h.buckets)) {
 		return int64(float64(estimate) * math.Log(float64(len(h.buckets))/float64(len(h.emptyBucket))))
 	}
-	if estimate > 10_000_000 {
+	if estimate > 4_000_000_000 {
 		return int64(-math.Pow(2, -32) * math.Log(1-float64(estimate)*math.Pow(2, -32)))
 	}
 	return int64(estimate)
@@ -86,6 +86,6 @@ func (h *HyperLogLog) Count() int64 {
 	// calculate estimate
 	estimate := alpha * float64(len(h.buckets)) * (float64(len(h.buckets) - len(h.emptyBucket))) / harmonicMean
 	// fmt.Println(estimate)
-	return int64(estimate)
+	return h.correct(estimate)
 
 }
