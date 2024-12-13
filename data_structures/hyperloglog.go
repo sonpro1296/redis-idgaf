@@ -1,14 +1,13 @@
 package data_structures
 
 import (
-	"fmt"
 	"hash"
 	"math"
 
 	"github.com/spaolacci/murmur3"
 )
 
-const BucketFactor = 12
+const BucketFactor = 14
 
 type HyperLogLog struct {
 	buckets     []int
@@ -31,28 +30,30 @@ func NewHyperLogLog() *HyperLogLog {
 }
 
 func (h *HyperLogLog) countLeadingZeros(hash uint64) int {
-	// addcount := 0
-	var indicator int64 = 1 << (64 - BucketFactor - 1)
+	// count := 0
+	indicator := 1<<(64-BucketFactor-1) - 1
 
 	// for i := 64 - BucketFactor - 1; i >= 0; i-- {
 	// 	// fmt.Printf("%032b\n", indicator)
-	// 	if int64(hash) & indicator != 0 {
+	// 	if int64(hash)&indicator != 0 {
 	// 		break
 	// 	}
 	// 	count++
 	// 	indicator >>= 1
 	// }
-	return count
+	rawResult := hash & uint64(indicator)
+
+	return 64 - BucketFactor - 1 - int(math.Floor(math.Log2(float64(rawResult))))
 }
 
-func (h *HyperLogLog) correct(estimate int64) int64 {
+func (h *HyperLogLog) correct(estimate float64) int64 {
 	if float64(estimate) <= 2.5*float64(len(h.buckets)) {
 		return int64(float64(estimate) * math.Log(float64(len(h.buckets))/float64(len(h.emptyBucket))))
 	}
 	if estimate > 10_000_000 {
 		return int64(-math.Pow(2, -32) * math.Log(1-float64(estimate)*math.Pow(2, -32)))
 	}
-	return estimate
+	return int64(estimate)
 
 }
 
@@ -76,15 +77,15 @@ func (h *HyperLogLog) Count() int64 {
 	var harmonicMean float64
 	// fmt.Println(len(h.emptyBucket))
 	for _, count := range h.buckets {
-		fmt.Println(count)
+		// fmt.Println(count)
 		harmonicMean += 1 / math.Pow(2.0, float64(count))
 	}
 	// harmonicMean
-	fmt.Println(harmonicMean)
+	// fmt.Println(harmonicMean)
 
 	// calculate estimate
 	estimate := alpha * float64(len(h.buckets)) * (float64(len(h.buckets) - len(h.emptyBucket))) / harmonicMean
-	fmt.Println(estimate)
+	// fmt.Println(estimate)
 	return int64(estimate)
 
 }
